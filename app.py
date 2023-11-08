@@ -118,3 +118,6 @@ def update_output_and_chart(selected_category, selected_years, filter_model, row
 # Run the app
 if __name__ == '__main__':
     app.run_server(debug=True)
+
+
+
