@@ -4,30 +4,22 @@ from dash import html, dcc, callback, Output, Input
 import dash_ag_grid as dag
 import plotly.express as px
 import dash_chart_editor as dce
-import utils
+from utils import filter_options
 
 # Load and preprocess the dataset (loading only selected columns to optimize performance)
 columns_needed = ['country', 'year', 'primary_energy_consumption', 'renewables_consumption']
 df = pd.read_csv('data/owid-energy-data.csv', usecols=columns_needed)
-
-
 
 # Initialize the Dash app
 app = dash.Dash(__name__)
 
 # Define the layout of the app
 app.layout = html.Div([
-    # New dropdown to select the filter category (countries, continents, etc.)
-    dcc.Dropdown(
-        id='country-filter',
-        options=[{'label': k, 'value': k} for k in utils.filter_options.keys()],
-        value='Countries',  # default value
-        clearable=False,
-        style={"width": "50%"}  # You can adjust the style as needed
-    ),
-    # Refactored dropdown for category selection based on the filter above
+    # Dropdown to select the filter category (countries, continents, etc.)
     dcc.Dropdown(
         id='category-dropdown',
+        options=[{'label': k, 'value': k} for k in filter_options.keys()],
+        value='Countries',  # default value
         clearable=False,
         style={"width": "50%"}  # You can adjust the style as needed
     ),
@@ -44,10 +36,18 @@ app.layout = html.Div([
     dag.AgGrid(
         id='my_ag_grid',
         rowData=df.to_dict('records'),
-        columnDefs=[{'field': c} for c in df.columns],
+        columnDefs=[
+            {'field': c, 'filter': 'agTextColumnFilter', 'floatingFilter': True}
+            for c in df.columns
+        ],
+        defaultColDef={
+            'filter': True,  # Enable filters for all columns
+            'sortable': True,  # Enable sorting for all columns
+        },
         dashGridOptions={
             'pagination': True,
             'paginationPageSize': 20,
+            'enableFilter': True,  # Turn on filtering
         },
     ),
     # Graph component to display the chart
@@ -60,24 +60,11 @@ app.layout = html.Div([
     )
 ])
 
-# Callback for updating category dropdown based on country filter selection
-@callback(
-    Output('category-dropdown', 'options'),
-    Output('category-dropdown', 'value'),
-    Input('country-filter', 'value')
-)
-def set_category_options(selected_filter):
-    # Update the options in category dropdown based on selected filter
-    categories = utils.filter_options[selected_filter]
-    options = [{'label': category, 'value': category} for category in categories]
-    value = options[0]['value'] if options else None
-    return options, value
-
 # Callback for updating AG Grid, Chart, and Chart Editor based on category dropdown and slider
 @callback(
     [Output('my_ag_grid', 'rowData'),
      Output('energy-chart', 'figure'),
-     Output('chart-editor', 'dataSources')],  # Add this line to update the data sources of the chart editor
+     Output('chart-editor', 'dataSources')],  # Update the data sources of the chart editor
     [Input('category-dropdown', 'value'),
      Input('year-slider', 'value')]
 )
@@ -86,8 +73,11 @@ def update_output(selected_category, selected_years):
     if not selected_category:
         raise dash.exceptions.PreventUpdate
     
-    # Filter the dataframe based on the inputs
-    filtered_df = df[(df['country'] == selected_category) & 
+    # Determine the filter list based on the selected category
+    filter_list = filter_options.get(selected_category, [])
+
+    # Filter the dataframe based on the selected years and category list
+    filtered_df = df[(df['country'].isin(filter_list)) & 
                      (df['year'] >= selected_years[0]) & 
                      (df['year'] <= selected_years[1])]
     
