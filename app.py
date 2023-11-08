@@ -1,6 +1,6 @@
 import pandas as pd
 import dash
-from dash import html, dcc, callback, Output, Input
+from dash import html, dcc, callback, Output, Input, State, ctx
 import dash_ag_grid as dag
 import plotly.express as px
 import dash_chart_editor as dce
@@ -60,36 +60,53 @@ app.layout = html.Div([
     )
 ])
 
-# Callback for updating AG Grid, Chart, and Chart Editor based on category dropdown and slider
+# Combined callback for updating AG Grid, Chart, and Chart Editor based on category dropdown, slider, and AG Grid filtering
 @callback(
     [Output('my_ag_grid', 'rowData'),
      Output('energy-chart', 'figure'),
-     Output('chart-editor', 'dataSources')],  # Update the data sources of the chart editor
+     Output('chart-editor', 'dataSources')],
     [Input('category-dropdown', 'value'),
-     Input('year-slider', 'value')]
+     Input('year-slider', 'value'),
+     Input('my_ag_grid', 'filterModel')],
+    [State('my_ag_grid', 'rowData')]
 )
-def update_output(selected_category, selected_years):
-    # Handle case when selected_category is None
-    if not selected_category:
-        raise dash.exceptions.PreventUpdate
-    
-    # Determine the filter list based on the selected category
-    filter_list = filter_options.get(selected_category, [])
+def update_output_and_chart(selected_category, selected_years, filter_model, row_data):
+    # Use ctx to determine which input was triggered
+    triggered_id = ctx.triggered_id
 
-    # Filter the dataframe based on the selected years and category list
-    filtered_df = df[(df['country'].isin(filter_list)) & 
-                     (df['year'] >= selected_years[0]) & 
-                     (df['year'] <= selected_years[1])]
-    
+    # Initialize the dataframe
+    filtered_df = df.copy()
+
+    # If the AG Grid filter was triggered, apply filters to the DataFrame
+    if triggered_id == 'my_ag_grid':
+        # Convert the current AG Grid row data into a DataFrame
+        filtered_df = pd.DataFrame(row_data)
+
+        # Apply the filters to the dataframe
+        # You'll need to customize this part to match the structure of your 'filterModel'
+        for col, f in filter_model.items():
+            if 'filter' in f:
+                filtered_df = filtered_df[filtered_df[col].astype(str).str.contains(f['filter'])]
+
+    # If the category dropdown or year slider was triggered, filter based on those
+    else:
+        # Determine the filter list based on the selected category
+        filter_list = filter_options.get(selected_category, [])
+
+        # Filter the dataframe based on the selected years and category list
+        filtered_df = filtered_df[(filtered_df['country'].isin(filter_list)) & 
+                                  (filtered_df['year'] >= selected_years[0]) & 
+                                  (filtered_df['year'] <= selected_years[1])]
+
     # Update the AG Grid data
     grid_data = filtered_df.to_dict('records')
     
-    # Create a line chart for primary energy consumption over selected years
+    # Create the updated chart with the filtered data
     fig = px.line(
         filtered_df,
         x='year',
         y='primary_energy_consumption',
-        title=f'Primary Energy Consumption in {selected_category}'
+        title=f'Primary Energy Consumption {("for " + selected_category) if triggered_id != "my_ag_grid" else "(Filtered by AG Grid)"}'
     )
     
     # Update the data sources for the chart editor
