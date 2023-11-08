@@ -5,60 +5,89 @@ import dash_ag_grid as dag
 import plotly.express as px
 import dash_chart_editor as dce
 from utils import filter_options
+import dash_bootstrap_components as dbc
 
 # Load and preprocess the dataset (loading only selected columns to optimize performance)
 columns_needed = ['country', 'year', 'primary_energy_consumption', 'renewables_consumption']
 df = pd.read_csv('data/owid-energy-data.csv', usecols=columns_needed)
 
-# Initialize the Dash app
-app = dash.Dash(__name__)
+# Initialize the Dash app with Bootstrap CSS
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
-# Define the layout of the app
-app.layout = html.Div([
-    # Dropdown to select the filter category (countries, continents, etc.)
-    dcc.Dropdown(
-        id='category-dropdown',
-        options=[{'label': k, 'value': k} for k in filter_options.keys()],
-        value='Countries',  # default value
-        clearable=False,
-        style={"width": "50%"}  # You can adjust the style as needed
-    ),
-    # Range Slider for Year selection
-    dcc.RangeSlider(
-        id='year-slider',
-        min=df['year'].min(),
-        max=df['year'].max(),
-        value=[df['year'].min(), df['year'].max()],  # Default range
-        marks={str(year): str(year) for year in range(df['year'].min(), df['year'].max()+1, 10)},  # Marks for years
-        step=1  # Year steps
-    ),
-    # AG Grid component to display the data
-    dag.AgGrid(
-        id='my_ag_grid',
-        rowData=df.to_dict('records'),
-        columnDefs=[
-            {'field': c, 'filter': 'agTextColumnFilter', 'floatingFilter': True}
-            for c in df.columns
-        ],
-        defaultColDef={
-            'filter': True,  # Enable filters for all columns
-            'sortable': True,  # Enable sorting for all columns
-        },
-        dashGridOptions={
-            'pagination': True,
-            'paginationPageSize': 20,
-            'enableFilter': True,  # Turn on filtering
-        },
-    ),
-    # Graph component to display the chart
-    dcc.Graph(id='energy-chart'),
-    # Dash Chart Editor component
-    html.H4("Interactive Chart Editor"),
-    dce.DashChartEditor(
-        id='chart-editor',
-        dataSources=df.to_dict("list"),
-    )
-])
+# Define the layout of the app using Bootstrap components
+app.layout = dbc.Container(
+    fluid=True,
+    children=[
+        dbc.Row(
+            dbc.Col(
+                html.H1("Global Energy Dashboard: Tracking Consumption and Renewables",
+                        className="text-center mt-4 mb-4"),  # Center align and margin top and bottom
+                width=12
+            )
+        ),
+        # First row with dropdown and slider on the left, and AG Grid on the right
+        dbc.Row(
+            [
+                dbc.Col(
+                    [
+                        dcc.Dropdown(
+                            id='category-dropdown',
+                            options=[{'label': k, 'value': k} for k in filter_options.keys()],
+                            value='Countries',
+                            clearable=False,
+                        ),
+                        dcc.RangeSlider(
+                            id='year-slider',
+                            min=df['year'].min(),
+                            max=df['year'].max(),
+                            value=[df['year'].min(), df['year'].max()],
+                            marks={str(year): str(year) for year in range(df['year'].min(), df['year'].max()+1, 10)},
+                            step=1,
+                        ),
+                    ],
+                    md=4,  # Adjust the size for medium screens and up
+                ),
+                dbc.Col(
+                    # AG Grid component to display the data
+                    dag.AgGrid(
+                        id='my_ag_grid',
+                        rowData=df.to_dict('records'),
+                        columnDefs=[
+                            {'field': c, 'filter': 'agTextColumnFilter', 'floatingFilter': True}
+                            for c in df.columns
+                        ],
+                        defaultColDef={
+                            'filter': True,  # Enable filters for all columns
+                            'sortable': True,  # Enable sorting for all columns
+                        },
+                        dashGridOptions={
+                            'pagination': True,
+                            'paginationPageSize': 20,
+                            'enableFilter': True,  # Turn on filtering
+                        },
+                    ),
+                    md=8,
+                ),
+            ]
+        ),
+        # Second row for charts
+        dbc.Row(
+            [
+                dbc.Col(
+                    dcc.Graph(id='energy-chart'),
+                    md=6,
+                ),
+                dbc.Col(
+                    [
+                        html.H4("Interactive Chart Editor", className="mt-3 mb-3"),  # Added margin top and bottom for spacing
+                        dce.DashChartEditor(id='chart-editor', dataSources=df.to_dict("list")),
+                    ],
+                    md=6,
+                ),
+            ]
+        ),
+    ],
+)
 
 # Combined callback for updating AG Grid, Chart, and Chart Editor based on category dropdown, slider, and AG Grid filtering
 @callback(
