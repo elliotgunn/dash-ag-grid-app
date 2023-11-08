@@ -73,4 +73,14 @@ miscellaneous_global = [
     "World"
 ]
 
-
+# Combine all lists into a dictionary for the dropdown
+filter_options = {
+    'Countries': countries,
+    'Geographical Continents': geographical_continents,
+    'Continental Sub-Regions': continental_subregions,
+    'Economic and Political Groups': economic_political_groups,
+    'Income Classifications': income_classifications,
+    'Energy and International Projections': energy_international_projections,
+    'US-Specific and Other Specific Regions': us_specific_and_other_regions,
+    'Miscellaneous/Global': miscellaneous_global,
+}
