@@ -104,14 +104,3 @@ filter_options = {
     'US-Specific and Other Specific Regions': us_specific_and_other_regions,
     'Miscellaneous/Global': miscellaneous_global,
 }
-
-
-def sum_of_digits(m):
-    m =+ 1
-    
-    for i in range(10):
-        m += 1
-    return m
-
-
-
