@@ -106,6 +106,12 @@ filter_options = {
 }
 
 
+def sum_of_digits(m):
+    m =+ 1
+    
+    for i in range(10):
+        m += 1
+    return m
 
 
 
