@@ -104,8 +104,3 @@ filter_options = {
     'US-Specific and Other Specific Regions': us_specific_and_other_regions,
     'Miscellaneous/Global': miscellaneous_global,
 }
-
-
-
-
-
