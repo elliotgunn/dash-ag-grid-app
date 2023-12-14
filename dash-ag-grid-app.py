@@ -77,8 +77,11 @@ app.layout = dbc.Container(
                         columnDefs=[
                             {
                                 "field": c,
-                                "filter": "agTextColumnFilter",
+                                "filter": "agNumberColumnFilter" if c in ["year", "primary_energy_consumption", "renewables_consumption"] else "agTextColumnFilter",
                                 "floatingFilter": True,
+                                "resizable": True,
+                                "sortable": True,
+                                "editable": True
                             }
                             for c in df.columns
                         ],
@@ -98,7 +101,6 @@ app.layout = dbc.Container(
         ),
     ],
 )
-
 
 # Combined callback for updating AG Grid and Chart based on category dropdown, slider, and AG Grid filtering
 @callback(
