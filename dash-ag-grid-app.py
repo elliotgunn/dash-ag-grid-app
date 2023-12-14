@@ -77,11 +77,18 @@ app.layout = dbc.Container(
                         columnDefs=[
                             {
                                 "field": c,
-                                "filter": "agNumberColumnFilter" if c in ["year", "primary_energy_consumption", "renewables_consumption"] else "agTextColumnFilter",
+                                "filter": "agNumberColumnFilter"
+                                if c
+                                in [
+                                    "year",
+                                    "primary_energy_consumption",
+                                    "renewables_consumption",
+                                ]
+                                else "agTextColumnFilter",
                                 "floatingFilter": True,
                                 "resizable": True,
                                 "sortable": True,
-                                "editable": True
+                                "editable": True,
                             }
                             for c in df.columns
                         ],
@@ -101,6 +108,7 @@ app.layout = dbc.Container(
         ),
     ],
 )
+
 
 # Combined callback for updating AG Grid and Chart based on category dropdown, slider, and AG Grid filtering
 @callback(
@@ -149,8 +157,16 @@ def update_output_and_chart(selected_category, selected_years, filter_model):
     fig = px.line(
         filtered_df,
         x="year",
-        y="primary_energy_consumption",
-        title=f"Primary Energy Consumption for {selected_category}",
+        y=["primary_energy_consumption", "renewables_consumption"],
+        title=f"Energy Consumption for: {selected_category}",
+    )
+
+    # Update chart layout and legends
+    fig.update_layout(
+        xaxis_range=[1960, df["year"].max()],
+        xaxis_title="Year",
+        yaxis_title="Energy Consumption",
+        legend_title="Energy Type",
     )
 
     # Set the default x-axis to start at 1960
@@ -158,6 +174,7 @@ def update_output_and_chart(selected_category, selected_years, filter_model):
 
     # Return the updated data and figure
     return grid_data, fig
+
 
 # Run the app
 if __name__ == "__main__":
