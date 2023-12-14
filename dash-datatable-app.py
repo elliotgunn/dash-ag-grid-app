@@ -112,9 +112,18 @@ def update_output_and_chart(selected_category, selected_years):
     fig = px.line(
         filtered_df,
         x="year",
-        y="primary_energy_consumption",
-        title=f"Primary Energy Consumption for {selected_category}",
+        y=["primary_energy_consumption", "renewables_consumption"],
+        title=f"Energy Consumption for: {selected_category}",
     )
+
+    # Update chart layout and legends
+    fig.update_layout(
+        xaxis_range=[1960, df["year"].max()],
+        xaxis_title="Year",
+        yaxis_title="Energy Consumption",
+        legend_title="Energy Type",
+    )
+
     fig.update_layout(xaxis_range=[1960, df["year"].max()])
 
     # Return the updated data and figure
